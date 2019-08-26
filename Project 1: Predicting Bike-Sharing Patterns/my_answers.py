@@ -1,19 +1,23 @@
 import numpy as np
 
-
 class NeuralNetwork(object):
-    def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate):
+    def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate, verbose = False):
         # Set number of nodes in input, hidden and output layers.
         self.input_nodes = input_nodes
         self.hidden_nodes = hidden_nodes
         self.output_nodes = output_nodes
+        
+        # Set verbosity for debugging
+        self.verbose = verbose
+
 
         # Initialize weights
         self.weights_input_to_hidden = np.random.normal(0.0, self.input_nodes**-0.5, 
                                        (self.input_nodes, self.hidden_nodes))
-
+        
         self.weights_hidden_to_output = np.random.normal(0.0, self.hidden_nodes**-0.5, 
                                        (self.hidden_nodes, self.output_nodes))
+
         self.lr = learning_rate
         
         #### TODO: Set self.activation_function to your implemented sigmoid function ####
@@ -29,6 +33,10 @@ class NeuralNetwork(object):
         #def sigmoid(x):
         #    return 0  # Replace 0 with your sigmoid calculation here
         #self.activation_function = sigmoid
+        
+        if self.verbose:
+            print('weights_input_to_hidden.shape ', self.weights_input_to_hidden.shape)
+            print('weights_hidden_to_output.shape ', self.weights_hidden_to_output.shape)
                     
 
     def train(self, features, targets):
@@ -91,17 +99,26 @@ class NeuralNetwork(object):
         error = y - final_outputs # Output layer error is the difference between desired target and actual output.
         
         # TODO: Calculate the hidden layer's contribution to the error
-        hidden_error = final_outputs-hidden_outputs
+        hidden_error = np.dot(self.weights_hidden_to_output, error)
         
         # TODO: Backpropagated error terms - Replace these values with your calculations.
-        output_error_term = error*(y)
+        output_error_term = error
         
-        hidden_error_term = hidden_error*(self.activation_function(hidden_outputs)*(1-self.activation_function(hidden_outputs)))
+        hidden_error_term = hidden_error*(hidden_outputs)*(1-hidden_outputs)
         
         # Weight step (input to hidden)
-        delta_weights_i_h += hidden_error_term*hidden_outputs
+        delta_weights_i_h += hidden_error_term*X[:,None]
         # Weight step (hidden to output)
-        delta_weights_h_o += output_error_term*final_outputs
+        delta_weights_h_o += output_error_term*hidden_outputs[:,None]
+        
+        if self.verbose:
+            print('error ', error)
+            print('hidden_error ', hidden_error)
+            print('output error term ', output_error_term)
+            print('hidden_error term ', hidden_error_term)
+            print('delta_weights_i_h ', delta_weights_i_h.shape)
+            print('delta_weights_h_o ', delta_weights_h_o.shape)
+
         return delta_weights_i_h, delta_weights_h_o
 
     def update_weights(self, delta_weights_i_h, delta_weights_h_o, n_records):
@@ -116,6 +133,10 @@ class NeuralNetwork(object):
         '''
         self.weights_hidden_to_output += self.lr*delta_weights_h_o/n_records # update hidden-to-output weights with gradient descent step
         self.weights_input_to_hidden += self.lr*delta_weights_i_h/n_records # update input-to-hidden weights with gradient descent step
+        
+        if self.verbose:
+            print('weights_hidden_to_output ', self.weights_hidden_to_output.shape)
+            print('weights_input_to_hidden ', self.weights_input_to_hidden.shape)
 
     def run(self, features):
         ''' Run a forward pass through the network with input features 
@@ -140,7 +161,7 @@ class NeuralNetwork(object):
 #########################################################
 # Set your hyperparameters here
 ##########################################################
-iterations = 100
-learning_rate = 0.1
-hidden_nodes = 2
+iterations = 500
+learning_rate = 0.3
+hidden_nodes = 16
 output_nodes = 1
